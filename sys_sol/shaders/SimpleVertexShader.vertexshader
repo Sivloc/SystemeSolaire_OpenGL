@@ -1,0 +1,49 @@
+#version 330 core
+layout(location = 0) in vec3 vertexPosition_modelspace;
+layout(location = 1) in vec2 vertexUV;
+layout(location = 2) in vec3 vertexNormals;
+
+out vec2 UV;
+out vec4 normals;
+out float cosTheta;
+out float cosAlpha;
+out float longueur;
+
+uniform mat4 MVP;
+uniform mat4 m;
+uniform vec3 lightpos;
+uniform vec3 posCam;
+
+void main(){
+
+    //Gestion de la position de l'objet & des UVs
+    
+    gl_Position = MVP*vec4(vertexPosition_modelspace,1);
+    UV = vertexUV;
+    
+    //Calcul des vecteurs pour la lumière diffuse
+    
+    vec3 worldPosition = vec3(m * vec4(vertexPosition_modelspace, 1.0));
+    normals = m*vec4(vertexNormals,0);
+    vec4 lightvec = vec4(lightpos - worldPosition,0);
+    
+    //Calcul des vecteurs pour la lumière spéculaire
+    
+    vec4 camvec = vec4(worldPosition - posCam,0);
+    float longueur = length(camvec);
+    
+    //Normalisation des vecteurs
+    
+    vec4 lightDir = normalize(lightvec);
+    vec4 normDir = normalize(normals);
+    vec4 lightBounce = reflect(lightDir,normDir);
+    camvec = normalize(camvec);
+    
+    //Produit scalaire du vecteur direction lumière avec le vecteur normal
+    
+    cosTheta = clamp(dot(lightDir,normDir),0.f,1.f);
+    
+    //Produit scalaire du vecteur symétrique au vecteur lumière avec le vecteur direction caméras
+    
+    cosAlpha = pow(clamp(dot(lightBounce,camvec),0.f,1.f),5);
+}
