@@ -87,8 +87,33 @@ void NavigationControls::update(float deltaTime, Shader *shader , float &Pspeed)
             m_Camera->position -= up * deltaTime * speed;
         }
         if (glfwGetKey(m_Window,GLFW_KEY_1) == GLFW_PRESS){
-
+            m_Camera->mode = 1;
         }
+        if (glfwGetKey(m_Window,GLFW_KEY_2) == GLFW_PRESS){
+            m_Camera->mode = 2;
+        }
+        if (glfwGetKey(m_Window,GLFW_KEY_3) == GLFW_PRESS){
+            m_Camera->mode = 3;
+        }
+        if (glfwGetKey(m_Window,GLFW_KEY_4) == GLFW_PRESS){
+            m_Camera->mode = 4;
+        }
+        if (glfwGetKey(m_Window,GLFW_KEY_5) == GLFW_PRESS){
+            m_Camera->mode = 5;
+        }
+        if (glfwGetKey(m_Window,GLFW_KEY_6) == GLFW_PRESS){
+            m_Camera->mode = 6;
+        }
+        if (glfwGetKey(m_Window,GLFW_KEY_7) == GLFW_PRESS){
+            m_Camera->mode = 7;
+        }
+        if (glfwGetKey(m_Window,GLFW_KEY_8) == GLFW_PRESS){
+            m_Camera->mode = 8;
+        }
+        if (glfwGetKey(m_Window,GLFW_KEY_0) == GLFW_PRESS){
+            m_Camera->mode = 0;
+        }
+
     }
 
 }

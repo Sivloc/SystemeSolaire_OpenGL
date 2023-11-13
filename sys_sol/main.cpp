@@ -5,6 +5,7 @@
 #include "glm/glm.hpp"
 #include <vector>
 #include <cstdlib>
+#include"imgui/imgui.h"
 
 #include "vertexbuffer.h"
 #include "vertexarray.h"
@@ -20,6 +21,7 @@ int main()
 {
     string path = "/home/formation/open_gl/sys_sol";
     const char *pathc = "/home/formation/open_gl/sys_sol";
+    bool displayOrbites = false;
 /////////////////////////Initialisation de GLFW/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     if(!glfwInit()){
@@ -90,22 +92,10 @@ int main()
 /////////////////////////On crée la camera et les contrôles/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     float SpeedCoef = 0.5;
     Camera cam(width, height);
-    cam.position = glm::vec3(0.f,150.f,150.f);
     NavigationControls controls(window, &cam);
     PointLight Lumiere = PointLight(glm::vec3(0.8,0.8,0.8),glm::vec3(0.f,500.f,0.f),1);
 
 /////////////////////////Création des formes à afficher/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    vector<glm::vec3> orbitVertices;
-    vector<glm::vec2> orbitUvs;
-    for(int i =0;i < 500; i++){
-        float theta = 2.f * 3.1415926f * float(i) / 500.f;
-        float x = cosf(theta);
-        float y = sinf(theta);
-        float u = 0.5f * cosf(theta) + 0.5f;
-        float v  =0.5f * sinf(theta) + 0.5f;
-        orbitVertices.push_back(glm::vec3(x,0.f,y));
-        orbitUvs.push_back(glm::vec2(u,v));
-    }
 
     //Chemins des différents fichiers .obj utilisés
     const char *sphere = "/home/formation/open_gl/sys_sol/obj/planete.obj";
@@ -113,7 +103,7 @@ int main()
     const char *orbite = "/home/formation/open_gl/sys_sol/obj/orbite_50.obj";
     const char *anneau = "/home/formation/open_gl/sys_sol/obj/anneau.obj";
 
-    //Création de tous les objets correspondants aux planètes, àl'anneau de Saturne et à la Lune
+    //Création de tous les objets correspondants aux planètes, à l'anneau de Saturne et à la Lune
     Object Soleil(sphere,path+"/textures/planets/2k_sun.jpg");
     Object Mercure(sphere,path+"/textures/planets/2k_mercury.jpg");
     Object Venus(sphere, path+"/textures/planets/2k_venus.jpg");
@@ -125,14 +115,11 @@ int main()
     Object Anneau(anneau,path+"/textures/planets/2k_saturn_ring_turned.png");
     Object Uranus(sphere,path+"/textures/planets/2k_uranus.jpg");
     Object Neptune(sphere,path+"/textures/planets/2k_neptune.jpg");
-
     // Création de la skybox
     Object skybox(cube,path+"/textures/space/8k_space.jpg");
-    //Object Orbite(orbitVertices,orbitUvs,path+"/textures/rouge.png");
-    Object Orbite(orbite,path+"/textures/marbre.png");
 
-    /*std::vector<glm::vec2> StartPos = {};
-    StartPos.push_back(float x rand() % 6);*/
+    // Création de l'orbite des planètes
+    Object Orbite(orbite,path+"/textures/marbre.png");
 
 
 /////////////////////////Création de la matrice MVP/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -144,7 +131,7 @@ int main()
 
     glm::mat4 mvp = p*v*m;
 
-    //shader.setUniformMat4f("MVP", mvp);
+    shader.setUniformMat4f("MVP", mvp);
 
 /////////////////////////Boucle de rendu/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -166,19 +153,23 @@ int main()
 
     while(glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS && !glfwWindowShouldClose(window)){
 
+        // Nettoyage des Buffers
         renderer.Clear();
+        // Lien du shader et de la lumière
         shader.Bind();
         Lumiere.Bind(shader);
+        // valeurs gérant la rotation des planètes
         currentTime = glfwGetTime();
         deltaTime = currentTime-lastTime;
         lastTime = currentTime;
         controls.setSpeed(100);
-        float PlanetSpeed = currentTime*SpeedCoef;
 
         controls.update(deltaTime, &shader,SpeedCoef);
+        float PlanetSpeed = currentTime*SpeedCoef;
+
         shader.setUniform3fv("posCam",cam.position);
 
-
+        //////////////// DESSIN DES PLANETES//////////////////
         //Mercure
         cam.computeMatrices(width, height);
         //On donne une vitesse de rotation à l'objet
@@ -186,14 +177,18 @@ int main()
         // On donne également des coordonnées mobiles pour la révolution autour du soleil
         Mercure.position = glm::vec3(200*cos(PlanetSpeed + 4.28),0.f,200*sin(PlanetSpeed + 4.28));
         m = Mercure.getModelMatrix();
+        // On utilise le même modèle pour toutes les planètes donc on met celui-ci à la bonne taille
         glm::mat4 m_scale = glm::scale(glm::mat4(1.f),glm::vec3(10.f,10.f,10.f));
         m = m * m_scale;
         v = cam.getViewMatrix();
         p = cam.getProjectionMatrix();
         mvp = p*v*m;
+        // On envoie ainsi les matrices MVP et modèle au shader
         shader.setUniformMat4f("MVP", mvp);
         shader.setUniformMat4f("m",m);
+        // Ce coefficient sert à distinguer le soleil des planètes dans le shader
         shader.setUniform1f("SunCoef",1);
+        // On dessine Mercure
         renderer.Draw(va, Mercure, shader);
 
         //Venus
@@ -224,65 +219,66 @@ int main()
         shader.setUniformMat4f("m",m);
         renderer.Draw(va, Terre, shader);
 
-        /*Orbite.position = glm::vec3(0.f,0.f,0.f);
-        m = Orbite.getModelMatrix();
-        m_scale = glm::scale(glm::mat4(1.f),glm::vec3(2.f,2.f,2.f));
-        m = m * m_scale;
-        v = cam.getViewMatrix();
-        p = cam.getProjectionMatrix();
-        mvp = p*v*m;
-        shader.setUniformMat4f("MVP",mvp);
-        renderer.Draw(va,Orbite,shader);
+        if(displayOrbites){
+            Orbite.position = glm::vec3(0.f,0.f,0.f);
+            m = Orbite.getModelMatrix();
+            m_scale = glm::scale(glm::mat4(1.f),glm::vec3(2.f,2.f,2.f));
+            m = m * m_scale;
+            v = cam.getViewMatrix();
+            p = cam.getProjectionMatrix();
+            mvp = p*v*m;
+            shader.setUniformMat4f("MVP",mvp);
+            renderer.Draw(va,Orbite,shader);
 
-        m = Orbite.getModelMatrix();
-        m_scale = glm::scale(glm::mat4(1.f),glm::vec3(3.f,3.f,3.f));
-        m = m * m_scale;
-        mvp = p*v*m;
-        shader.setUniformMat4f("MVP",mvp);
-        renderer.Draw(va,Orbite,shader);
+            m = Orbite.getModelMatrix();
+            m_scale = glm::scale(glm::mat4(1.f),glm::vec3(3.f,3.f,3.f));
+            m = m * m_scale;
+            mvp = p*v*m;
+            shader.setUniformMat4f("MVP",mvp);
+            renderer.Draw(va,Orbite,shader);
 
-        m = Orbite.getModelMatrix();
-        m_scale = glm::scale(glm::mat4(1.f),glm::vec3(4.f,4.f,4.f));
-        m = m * m_scale;
-        mvp = p*v*m;
-        shader.setUniformMat4f("MVP",mvp);
-        renderer.Draw(va,Orbite,shader);
+            m = Orbite.getModelMatrix();
+            m_scale = glm::scale(glm::mat4(1.f),glm::vec3(4.f,4.f,4.f));
+            m = m * m_scale;
+            mvp = p*v*m;
+            shader.setUniformMat4f("MVP",mvp);
+            renderer.Draw(va,Orbite,shader);
 
-        m = Orbite.getModelMatrix();
-        m_scale = glm::scale(glm::mat4(1.f),glm::vec3(5.f,5.f,5.f));
-        m = m * m_scale;
-        mvp = p*v*m;
-        shader.setUniformMat4f("MVP",mvp);
-        renderer.Draw(va,Orbite,shader);
+            m = Orbite.getModelMatrix();
+            m_scale = glm::scale(glm::mat4(1.f),glm::vec3(5.f,5.f,5.f));
+            m = m * m_scale;
+            mvp = p*v*m;
+            shader.setUniformMat4f("MVP",mvp);
+            renderer.Draw(va,Orbite,shader);
 
-        m = Orbite.getModelMatrix();
-        m_scale = glm::scale(glm::mat4(1.f),glm::vec3(6.f,6.f,6.f));
-        m = m * m_scale;
-        mvp = p*v*m;
-        shader.setUniformMat4f("MVP",mvp);
-        renderer.Draw(va,Orbite,shader);
+            m = Orbite.getModelMatrix();
+            m_scale = glm::scale(glm::mat4(1.f),glm::vec3(6.f,6.f,6.f));
+            m = m * m_scale;
+            mvp = p*v*m;
+            shader.setUniformMat4f("MVP",mvp);
+            renderer.Draw(va,Orbite,shader);
 
-        m = Orbite.getModelMatrix();
-        m_scale = glm::scale(glm::mat4(1.f),glm::vec3(7.f,7.f,7.f));
-        m = m * m_scale;
-        mvp = p*v*m;
-        shader.setUniformMat4f("MVP",mvp);
-        renderer.Draw(va,Orbite,shader);
+            m = Orbite.getModelMatrix();
+            m_scale = glm::scale(glm::mat4(1.f),glm::vec3(7.f,7.f,7.f));
+            m = m * m_scale;
+            mvp = p*v*m;
+            shader.setUniformMat4f("MVP",mvp);
+            renderer.Draw(va,Orbite,shader);
 
-        m = Orbite.getModelMatrix();
-        m_scale = glm::scale(glm::mat4(1.f),glm::vec3(9.f,9.f,9.f));
-        m = m * m_scale;
-        mvp = p*v*m;
-        shader.setUniformMat4f("MVP",mvp);
-        renderer.Draw(va,Orbite,shader);
+            m = Orbite.getModelMatrix();
+            m_scale = glm::scale(glm::mat4(1.f),glm::vec3(9.f,9.f,9.f));
+            m = m * m_scale;
+            mvp = p*v*m;
+            shader.setUniformMat4f("MVP",mvp);
+            renderer.Draw(va,Orbite,shader);
 
-        m = Orbite.getModelMatrix();
-        m_scale = glm::scale(glm::mat4(1.f),glm::vec3(10.f,10.f,10.f));
-        m = m * m_scale;
-        mvp = p*v*m;
-        shader.setUniformMat4f("MVP",mvp);
-        renderer.Draw(va,Orbite,shader);*/
-
+            m = Orbite.getModelMatrix();
+            m_scale = glm::scale(glm::mat4(1.f),glm::vec3(10.f,10.f,10.f));
+            m = m * m_scale;
+            mvp = p*v*m;
+            shader.setUniformMat4f("MVP",mvp);
+            renderer.Draw(va,Orbite,shader);
+        }
 
 
         //Lune
@@ -290,7 +286,7 @@ int main()
         Lune.rotationAngles.y=PlanetSpeed;
         Lune.position = Terre.position+glm::vec3(20*cos(PlanetSpeed*2 + 1.7),0.f,15*sin(PlanetSpeed*2 + 1.7));
         m = Lune.getModelMatrix();
-        m_scale = glm::scale(glm::mat4(1.f),glm::vec3(5.f,5.f,5.f));
+        m_scale = glm::scale(glm::mat4(1.f),glm::vec3(3.f,3.f,3.f));
         m = m * m_scale;
         v = cam.getViewMatrix();
         p = cam.getProjectionMatrix();
@@ -380,36 +376,67 @@ int main()
         shader.setUniformMat4f("m",m);
         renderer.Draw(va, Neptune, shader);
 
+        /////////////////////MODIFICATIONS CAMERA////////////////////////////////
+
+        // On gère ici les différentes vues des planètes
+        glm::vec3 defaultPos = glm::vec3(400.f,150.f,400.f);
+        glm::vec3 decalage = glm::vec3(0.f,50.f,0.f);
+        switch(cam.mode){
+        case 1:
+            cam.position = Mercure.position+decalage;
+            break;
+        case 2:
+            cam.position = Venus.position+decalage;
+            break;
+        case 3:
+            cam.position = Terre.position+decalage;
+            break;
+        case 4:
+            cam.position = Mars.position+decalage;
+            break;
+        case 5:
+            cam.position = Jupiter.position+decalage;
+            break;
+        case 6:
+            cam.position = Saturne.position+decalage;
+            break;
+        case 7:
+            cam.position = Uranus.position+decalage;
+            break;
+        case 8:
+            cam.position = Neptune.position+decalage;
+            break;
+        default:
+            break;
+        }
+
+        ///////////////////////////////////DESSIN SKYBOX & SOLEIL//////////////////////////////////
         //Skybox
         cam.computeMatrices(width,height);
         skybox.position = glm::vec3(0,0,0);
         m = skybox.getModelMatrix();
+        // La skybox est un cube de 3000 unités de long entourant notre scène
         m_scale = glm::scale(glm::mat4(1.f),glm::vec3(3000.f,3000.f,3000.f));
         m = m * m_scale;
         v = cam.getViewMatrix();
         p = cam.getProjectionMatrix();
         mvp = p*v*m;
         shader.setUniformMat4f("MVP",mvp);
+        // On modifie ici ce paramètre pour la skybox et le soleil, qui ne sont éclairés que par la lumière ambiante.
         shader.setUniform1f("SunCoef",0);
         renderer.Draw(va,skybox,shader);
 
         //Soleil
         cam.computeMatrices(width, height);
-        // On récupère la matrice modèle du Soleil
         m = Soleil.getModelMatrix();
-        // On le place en (0,0,0)
         Soleil.position = glm::vec3(0.f,0.f,0.f);
-        // On le multiplie par 100 dans toutes les dimensions
-        m_scale = glm::scale(glm::mat4(1.f),glm::vec3(100.f,100.,100.f));
-        //On calcule la matrice mvp
+        m_scale = glm::scale(glm::mat4(1.f),glm::vec3(100.f,100.f,100.f));
         m = m * m_scale;
         v = cam.getViewMatrix();
         p = cam.getProjectionMatrix();
         mvp = p*v*m;
-        // On l'envoie au shader
         shader.setUniformMat4f("MVP", mvp);
         shader.setUniformMat4f("m",m);
-        // On dessine le Soleil
         renderer.Draw(va, Soleil, shader);
 
         ////////////////Partie rafraichissement de l'image et des évènements///////////////

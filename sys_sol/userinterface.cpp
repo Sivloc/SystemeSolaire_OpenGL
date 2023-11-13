@@ -16,9 +16,11 @@ void UserInterface::Draw()
     ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_Once);
     ImGui::SetNextWindowSize(ImVec2(200, 100), ImGuiCond_Once);
 
-    ImGui::Begin("Interface Graphique");
-
-    ImGui::Text("Texte Simple");
+    ImGui::Text("Hello, world %d", 123);
+    if (ImGui::Button("Save"))
+        MySaveFunction();
+    ImGui::InputText("string", buf, IM_ARRAYSIZE(buf));
+    ImGui::SliderFloat("float", &f, 0.0f, 1.0f);
 
     // Ajoutez d'autres éléments d'interface utilisateur ImGui ici selon vos besoins
 

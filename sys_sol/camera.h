@@ -25,6 +25,8 @@ public:
 
     void Bind(Shader *shader);
 
+    int mode;
+
 private:
     float FoV;
     glm::mat4 viewMatrix;
