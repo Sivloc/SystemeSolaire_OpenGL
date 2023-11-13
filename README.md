@@ -23,3 +23,10 @@ Avant de compiler le projet, assurez-vous de configurer le chemin (path) correct
 // Changer le chemin vers le dossier des ressources
 string path = "/chemin/vers/votre/dossier/SystemeSolaire_OpenGL";
 ```
+Changez également le chemin des 4 fichiers .obj utilisés, lignes 111 à 114 : 
+```cpp
+const char *sphere = "/chemin/vers/votre/dossier/SystemeSolaire_OpenGL/obj/planete.obj";
+const char *cube = "/chemin/vers/votre/dossier/SystemeSolaire_OpenGL/obj/cube.obj";
+const char *orbite = "/chemin/vers/votre/dossier/SystemeSolaire_OpenGL/obj/orbite_50.obj";
+const char *anneau = "/chemin/vers/votre/dossier/SystemeSolaire_OpenGL/obj/anneau.obj";
+```
