@@ -30,3 +30,8 @@ const char *cube = "/chemin/vers/votre/dossier/SystemeSolaire_OpenGL/obj/cube.ob
 const char *orbite = "/chemin/vers/votre/dossier/SystemeSolaire_OpenGL/obj/orbite_50.obj";
 const char *anneau = "/chemin/vers/votre/dossier/SystemeSolaire_OpenGL/obj/anneau.obj";
 ```
+Changez aussi ce paramètre si vous souhaitez afficher les orbites des planètes, ligne 24 : 
+```cpp
+// Changer le false en true pour afficher les orbites
+bool displayOrbites = false;
+```
